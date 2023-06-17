@@ -337,7 +337,7 @@ cout << movie_ratings.at(0).at(1) << endl;
 
 ```
 
-## Statements & Operators (Anki from here)
+## Statements & Operators
 
 ### Lvalues and Rvalues
 
@@ -417,3 +417,502 @@ for (auto c: "Frank") {
 
 ```
 
+## strings
+
+Use `#include <cctype>` to get various helper functions.
+
+Eg
+
+`toupper(c) isalpha(c)
+
+### c-style strings
+`#include <cstring>`
+`#include <cctype>` char functions
+
+An array of chars terminated with the null character.
+
+* string literal: sequence of chars enclosed in double quotes. Non-mutable.
+
+```cpp
+char str[80];
+strcopy(str, "hello");
+strcat(str, "there");
+```
+
+
+```cpp
+cin.getline(name, 50) // read in up to 50 chars
+```
+
+### C++ strings
+
+```cpp
+#include <string>
+```
+
+* used more commonly than c strings
+* Dynamic size
+* Safer
+* Can be converted to C strings if required
+
+```cpp
+string s1 {"Frank"};
+```
+
+```cpp
+// concatenation
+string sentence;
+
+string s1 {"hello"};
+
+sentence = s1 + " " + "world";
+
+sentence += "!";
+
+// the following wont work as it is trying to concatenation 2 c style strings
+sentence = "hello" + " world";
+
+// iterate chars
+for (char c: sentence)
+    cout << c << endl;
+    
+// get length
+cout << sentence.length() << endl;
+
+
+```
+
+Comparison:
+Can use standard operators:
+
+`==, !=, <, >`
+
+
+## Functions
+To find predefined functions, see c++ standard library header files at cop reference.com.
+
+```cpp
+// basic function
+int add_numbers(int a, int b) {
+    return a + b;
+}
+
+void print_hi() {
+    cout << "hi!" << endl;
+}
+
+void print_arr(int nums []);
+
+```
+
+### Common libs
+* cmath
+* cstdlib
+
+### Function Prototypes
+Functions must be defined _before_ they are called.
+
+This can become problematic with large programs, so we use __function prototypes__.
+
+Function prototypes tell the compiler what it needs without a function definition.
+
+Also sometimes called forward declarations.
+
+These can be stored in `.h` files.
+
+```cpp
+// note: the name a can also be omitted 
+int my_function(int a); // prototype
+
+int my_function(int a) { // function
+   return a;
+}
+
+// default value
+double calc_cost(double base_cost, double tax_rate = 0.06); // prototype
+```
+
+### function parameters
+
+In C++, parameters are passed by value (ie a copy of the data is passed in). Note this is true even for objects. It's not like Java where we pass a copy of the reference. Except arrays, which will have elements changed.
+
+Formal parameters: the parameters defined in function header
+Actual parameters: the parameters passed in as arguments
+
+### Function overloading
+
+A type of polymorphism: same function name with different parameters. The compiler works out which version of the function to use.
+
+```cpp
+int add_numbers(int, int);
+
+double add_numbers(double, double)
+```
+
+Note: return type is not considered. So parameter types must differ.
+
+### Array parameters
+
+Array elements can be changed in function bodies because all that's passed in is reference to the first element in memory. Also because of this, you need to pass in the size.
+
+To avoid changing the array by mistake, you can also use `const` in the parameter, to tell the compiler it's read only.
+
+```cpp
+void print_arr(const int nums[], size_t size) {
+   ...
+   nums[0] = 10; // compiler error since const
+}
+
+```
+
+### Pass by reference
+
+Use pass by reference to modify the actual parameter passed in.
+
+This can be done by using a reference with `&`.
+
+```cpp
+void set_to_zero(int &num){
+   num = 0;
+}
+ ```
+
+* pass by reference: `&`
+
+If we just want to improve performance by avoiding copying but don't want to accidentally change values we can use `const`
+again.
+
+```cpp
+void print_vec(const vector<int> &v);
+
+```
+
+### Inline functions
+
+Function calls have some overhead and they are pushed and popped from the stack.
+
+Sometimes we have simple functions.
+
+We can suggestion the compiler compiles them __inline__.
+
+Online functions avoid function call overhead, generate inline assembly code, faster, but can cause code bloat (end up with large binaries as you repeat the code).
+
+Compilers can also inline even without your suggestion.
+
+```cpp
+inline int add_numbers(int a, int b);
+
+```
+
+## Pointers
+
+Pointers are variables that store the address of another variable or function.
+
+If you don't initialize a pointer, it will contain garbage data.
+
+__Derefencing__ a pointer: accessing the data the pointer is pointing to.
+To do this, use the dereference operator `*`.
+In other words, we go to whatever the pointer is pointing at.
+
+```cpp
+
+int score {100};
+int *score_ptr {&score}; // Initialize pointer and point it to the memory address of score.
+
+cout << *score_ptr << endl; // Prints 100
+
+*score_ptr = 200;
+
+cout << *score_ptr << endl;  // Prints 200
+cout << score << endl; // Prints 200
+
+```
+
+### Note on frequent confusion
+
+Although the `*` symbol is used to initialize a pointer AND dereference a pointer,
+they are __not__ the same.
+
+Pointer assignment without the dereference operator must point to an address.
+
+Pointer assignment with the dereference operator must point to a variable or number etc.
+
+```cpp
+
+int a {100};
+int b {200};
+int *p {&a}; // When we initialize, we must use an address
+
+cout << *p << endl; // 100 (dereferencing)
+*p = 150; // 150 (set contents of p to 150, contents must be an int).
+cout << *p << endl; // 150
+
+p = b; // COMPILER ERROR: P itself must be set to an address
+
+p = &b; // Setting p must be set to an ADDRESS
+
+cout << *p << endl; // 200
+
+```
+
+### Dynamic Memory Allocation
+
+```cpp
+
+// Allocate space for an int
+int *int_ptr {nullptr};
+int_ptr = new int;  // Allocate space for an integer on the heap
+*int_ptr = 100;  // Set it to 100
+cout << *int_ptr << endl; // 100
+delete int_ptr;  // Frees allocated memory
+
+// Allocate space for an array
+size_t size{0};
+double *temp_ptr{nullptr};
+
+cout << "How many temps?";
+cin >> size;
+temp_ptr = new double[size];  // Allocate space contiguously in memory for this array.
+delete [] temp_ptr;  // Release the memory
+
+```
+
+```cpp
+
+int scores[] {100, 95, 89, -1};
+int *score_ptr {scores};
+
+// Array subscript location
+cout << scores[0] << endl;  // 100
+
+// Pointer subscript notation
+cout << score_ptr[0] << endl; // 100 (remember, array is just a memory location that points to the start of an array)
+
+// Pointer offset notation
+cout << *score_ptr << endl; //100
+cout << *(score_ptr+1) << endl; // 95 (move the address by 1 int and get what is there)
+
+// Array offset notation
+cout << *scores << endl; // 100
+cout << *(scores + 1) << endl;  // 95  (get the next address and dereference to it)
+
+while (*score_ptr != -1) {
+    cout << *score_ptr << endl;
+    score_ptr++;
+    // May also see cout << *score_ptr++ << endl;
+}
+
+```
+
+### Pointer Arithmetic
+
+Pointer arithmetic is useful for manipulating arrays.
+
+* `int_ptr++;`: increments a pointer to point to the next element in an array
+* `int_ptr--;`: decrements a pointer to point to the previous element in an array
+* `int_ptr1 == int_ptr2`: Will compare if they are both pointing to same address
+* `*int_ptr1 == *int_ptr2`: Will compare the things that are at the addresses via dereferencing
+
+### const and pointers
+
+We can have
+
+
+* pointers to constants: data pointed to can't change but constant can't point elsewhere ```cpp const int *score_ptr { &high_score}; *score_ptr=86; // error score_ptr = &low_score; // okay```
+* Constant pointers: the data pointed to can be changed but the constant itself cannot be
+
+```cpp
+int *const score_ptr { &high_score}; *score_ptr=86; // okay 
+score_ptr = &low_score; // error
+
+
+```
+
+
+* Constant pointers to constants: pointer can't change and neither can the data pointed to
+
+
+```cpp
+const int *const score_ptr { &high_score}; *score_ptr=86; // error 
+score_ptr = &low_score; // error
+
+
+```
+
+### Pointers to functions (pointers as args)
+
+You can pass in a pointer to an argument to pass by reference.
+
+```cpp
+
+void double_data(int *int_ptr);
+
+void double_data(int *int_ptr) {
+   *int_ptr *= 2;
+}
+
+void display(vector<string> *v) {
+    for (auto str: *v) {
+        cout << str << endl;
+    }
+}
+
+int main() {
+    int val{100};
+    double_data(&val); // NB: When param is pointer, pass in address
+
+    cout << val << endl; // 200
+    
+    // for iterables we have to dereference the pointer passed in to get to the object
+    vector<string> v {"a", "b", "c"};
+    display(&v);
+}
+```
+
+### Pointers from functions (pointers as return types)
+
+A common use case for returning a pointer from a function is to use the function to allocate memory
+dynamically, and then return the address of that memory.
+
+We can use `*` after the return arg type to say it's returning a pointer.
+
+```cpp
+
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int *create_array(size_t size, int init_value = 0) {
+    int *new_storage{nullptr};
+
+    new_storage = new int[size];  // Allocate size integers on the heap (not stack)
+
+    for (size_t i{0}; i < size; ++i) {
+        *(new_storage +i) = init_value;
+    }
+
+    return new_storage;
+}
+
+void display(const int *const array, size_t size) {
+    for (size_t i{0}; i < size; ++i) {
+        cout << array[i] << " ";
+    }
+
+    cout << endl;
+}
+
+int main() {
+    int *my_array{nullptr};
+
+    my_array = create_array(3, 0);
+
+    display(my_array, 3);
+
+    delete [] my_array;
+
+    return 0;
+}
+```
+
+### Pointer Pitfalls
+
+Note new "smart pointers" can take care of many of these issues.
+
+#### Uninitialized Pointers
+
+Pointers that point to random data because they weren't initialized.
+
+```cpp
+
+int *int_ptr;  // Pointing somewhere random, maybe containing important data.
+
+*int_ptr = 100;  // Hopefully makes program crash, but could cause weird bugs.
+
+```
+
+#### Dangling Pointers
+
+Pointer pointing to released memory.
+E.g., 2 pointers point to the same data, 1 pointer releases the data with delete,
+the other pointer is pointing to released memory.
+Or points to some local variable.
+
+#### Not checking if new failed
+
+If `new` fails an exception is thrown.
+
+#### Memory leak
+
+You allocate memory on the heap dynamically, but it has no pointer pointing to it.
+This is a memory leak.
+
+### References
+
+* An alias for a variable
+* Once initialized, cannot be made to refer to a different variable
+* Useful as function parameters
+```cpp
+
+    int num{100};
+    int &ref{num};
+    
+    cout << num << endl; // 100
+    cout << ref << endl; // 100
+    
+    num = 200;
+    
+    cout << num << endl; // 200
+    cout << ref << endl; // 200
+    
+    ref = 300;
+    
+    cout << num << endl; // 300
+    cout << ref << endl; // 300
+
+```
+
+### l-values and r-values
+
+Recall that an l-value is something on the LHS, and everything is an r-value.
+References are l-values, so when we try to assign or pass a ref, we must use an l-value.
+
+```cpp
+
+int square(int &n) {
+    return n*n;
+}
+
+int num {10};
+
+square(num); // OK
+
+square(5); // Error -- can't reference r-value
+
+// Another example
+
+int x {100};
+
+int &ref1 = x;  // OK (x is an l-value)
+ref1 = 1000; // OK
+
+int &ref2 = 100;  // Error -- 100 is an r-value.
+
+```
+
+### Pointers vs. References
+
+* Pass-by-value
+  * Default behavior
+  * Function does not modify actual parameters
+  * Parameter is small and efficient to copy (ints, etc)
+* Pass-by-reference using pointer
+  * Function modifies the actual parameter
+  * AND parameter is expensive to copy
+  * AND OK for pointer to be allowed a `nullptr` value
+  * Can use const if we just want to save on expensive copying but not modify pointer/values
+* Pass-by-reference using reference
+  * Function modifies the actual parameter
+  * AND parameter is expensive to copy
+  * AND the pointer will never be `nullptr`
+* 
