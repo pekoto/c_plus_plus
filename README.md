@@ -125,14 +125,14 @@ Preprocessors can be used to conditionally compile your source code. For example
 
 int main()
 {
-	return 0;
+    return 0;
 }
 
 // argc: number of arguments passed in
 // argv: vector of arguments passed in
 int main(int argc, char *argv[])
 {
-	return 0;
+    return 0;
 }
 
 ```
@@ -151,9 +151,9 @@ using namespace std;
 
 int main() {
 
-	count << "Hello, world.";
+    count << "Hello, world.";
 
-	return 0;
+    return 0;
 }
 
 ```
@@ -166,9 +166,9 @@ using std::cout;
 
 int main() {
 
-	cout << "Hello, world.";
+    cout << "Hello, world.";
 
-	return 0;
+    return 0;
 
 }
 
@@ -915,4 +915,833 @@ int &ref2 = 100;  // Error -- 100 is an r-value.
   * Function modifies the actual parameter
   * AND parameter is expensive to copy
   * AND the pointer will never be `nullptr`
-* 
+
+## Object-oriented Programming
+
+### Declaring a class
+
+Declare the class in a header file.
+It uses an __include guard__ to ensure it's only processed once.
+
+```cpp
+// Account.h
+
+#ifndef _ACCOUNT_H_ // include guard, if not defined...
+#define _ACCOUNT_H_ // include guard
+// Some compilers support #pragma once which does the same thing.
+#include <string>
+
+using namespace std;
+
+class Account {
+
+    // Attributes
+private:
+    string name;
+    double balance;
+
+public:
+    // Constructors
+    Account();
+    Account(string name);
+    Account(string name, double balance);
+    Account(double balance);
+
+    // Alternatively just have one constructor with default args
+    Account(string name_val = "None", double balance = 0.0)
+
+    // Destructors (have a ~)
+    // invoked automatically when object is destroyed, only 1 can exist, free up resources, etc.
+    ~Account();
+
+    // Methods
+    void set_name(string n);
+    string get_name();
+    
+    void set_balance(double bal);
+    double get_balance();
+
+    bool deposit(double amount);
+    bool withdraw(double amount);
+};
+
+#endif // include guard
+```
+
+Then define the class:
+
+```cpp
+// Account.cpp (prefix class name and scope resolution operator ::)
+#include "Account.h"  // Using include with <> means system header files, but using double quotes means this class is local to this project.
+#include <string>
+
+using namespace std;
+
+
+// Constructors
+Account::Account(string name_val, double balance_val) : name{name_val}, balance{balance_val} {
+    // Use constructor initialization list
+
+};
+
+Account::Account() : Account{"None", 0.0} {
+    // Constructor delegation to other constructor
+}
+
+Account::Account(string name_val) : Account{name_val, 0.0} {
+
+}
+
+
+Account::Account(double balance_val) : Account{"None", balance_val} {
+
+};
+
+// Destructors (have a ~)
+// invoked automatically when object is destroyed, only 1 can exist, free up resources, etc.
+Account::~Account() {
+    std::cout << "Account destroyed" << std::endl;
+}
+
+void Account::set_name(string name) {
+    this->name = name;
+}
+
+string Account::get_name() {
+    return name;
+}
+
+void Account::set_balance(double balance) {
+    this->balance = balance; // Use -> with this
+}
+
+double Account::get_balance() {
+    return balance;
+}
+
+bool Account::deposit(double amount) {
+    balance += amount;
+    return true
+}
+
+bool Account::withdraw(double amount) {
+    if (balance-amount >= 0) {
+        balance -= amount;
+        return true;
+    } else {
+        return false;
+    }
+
+}
+
+```
+
+Then use the class by including the header file again.
+
+```cpp
+
+#include <iostream>
+#include <string>
+#include <vector>
+#include "Account.h"
+
+using namespace std;
+
+int main() {
+    Account frank_account;
+    Account hero_account;
+
+    Player frank;
+    Player hero;
+
+    // Create enemy on the heap
+    Player *enemy{nullptr};
+    enemy = new Player;
+
+    // To access pointers to an object...
+    // 1. Dereference the pointer
+    (*enemy).name = "Person");
+    // 2. OR use the member of pointer operator (arrow operator)
+    enemy->name = "Person";
+
+    delete enemy;
+    
+    Account my_account;
+    my_account.set_name("Graham");
+    cout << my_account.get_name() << endl;
+
+    return 0;
+}
+
+```
+
+
+### Constructor Initialization Lists
+
+Constructor initialization lists initialize default attributes as the object is created.
+
+```cpp
+
+Player::Player(): name{"None"}, health{0}, xp{0} {
+
+}
+
+Player::Player(string name_value): name{name_value}, health{0}, xp{0} {
+
+}
+
+```
+
+### Delegating Constructors
+
+A way to reduce duplication in constructors.
+
+```cpp
+
+Player::Player(string name_val, int health_val, int xp_val) : name{name_val}, health{health_val}, xp{xp_val} {
+
+}
+
+Player::Player() : Player {"None", 0, 0} {
+
+}
+
+Player::Player(string name_val) : Player {name_val, 0, 0) {
+
+}
+
+```
+
+### Copy Constructors
+
+C++ will provide a compiler provided copy constructor if you don't provide one.
+Ie. it copies the values of each member to the new object. This is okay unless you have attributes that are pointers. In this case only the pointer is copied ("shallow copy").
+
+* Used when...
+    * Passing an object by value
+    * Returning an object by value
+    * Constructing one object based on another 
+
+Copy constructors look like constructors, but take in a single object as a constant reference of the same type. `const` because we don't want to change the source, and a reference because we don't want to make a copy of it -- that's the whole point!
+
+```cpp
+// Prototype
+Account(const Account &source);
+
+// Implementation
+Account::Account(const Account &source) : name{source.name}, balance{source.balance} {
+
+}
+
+```
+
+#### Shallow Copying & Deep Copying
+
+With the default copy constructor, each member is copied from the source object.
+For pointers, the __pointer__ is copied, but not what it's pointing to.
+When we release the storage, the other object still refers to the storage that was released by our copy!
+
+##### Shallow Copy Example
+
+```cpp
+
+class Shallow {
+
+private:
+    int *data; // Pointer
+
+public:
+    Shallow(int d); // Constuctor
+    Shallow(const Shallow &source); // Copy Constructor
+    ~Shallow(); // Destructor
+}
+
+// Constructor
+Shallow::Shallow(int d) {
+    data = new int;
+    *data = d;
+}
+
+// Copy constuctor
+// PROBLEM: Source and the new object both point to the same data!
+Shallow::Shallow(const Shallow &source) : data(source.data) {
+     cout << "Created copy" << endl;
+}
+
+// Destructor
+Shallow::~Shallow() {
+    // PROBLEM: The original object will still point to the released member when the copy is destroyed.
+    delete data; // Free storage
+    cout << "Freed storage" << endl;
+}
+
+```
+
+##### Deep Copy Example
+
+With a deep copy, we copy the data pointed to by the pointer. When we have raw pointers, we always want to implement a deep copy constructor.
+
+```cpp
+
+class Deep {
+
+private:
+    int *data;
+
+public:
+    Deep(int d);
+    Deep(const Deep &source);
+    ~Deep();
+}
+
+Deep::Deep(int d) {
+    data = new int;
+    *data = d;
+}
+
+// Copy constuctor
+Deep::Deep(const Deep &source) {
+     data = new int; // Allocate storage for a copy
+     *data = *source.data; // Copy the value of what we are pointing to into this storage
+     cout << "Created copy" << endl;
+}
+
+// We could also do constructor delegation
+Deep::Deep(const Deep &source) : Deep{*source.data} {
+    // Copy constructor using delegation.
+}
+
+// Destructor
+Deep::~Deep() {
+    // PROBLEM: The original object will still point to the released member when the copy is destroyed.
+    delete data; // Free storage
+    cout << "Freed storage" << endl;
+}
+```
+
+### Move Constructors
+
+When we execute code, the compiler creates temporary values.
+
+```cpp
+
+int total{0};
+total = 100 + 200;
+
+```
+
+* When `100+200` is evaluated, `300` is stored in an un-named temp value.
+* Then 300 is stored in the variable total
+* Then the temp value is discarded
+* The same thing happens with objects
+
+Move constructors are useful when:
+
+* Copy constructors are called many times, doing deep copying
+* Move constructors simply move the object rather than copy it
+* Optional but recommended when you have a raw pointer
+
+##### R-value References
+
+* Used in moving semantics and perfect forwarding
+* Move semantics all about r-value references
+* Used by the move constructor and move assignment operator to move an object instead of copying it
+* R-value reference operator: `&&`
+
+```cpp
+
+int x{100};
+int &l_ref = x; // l-value reference
+l_ref = 10; // change x to 10
+
+int &&r_ref = 200; // r-value reference
+r_ref = 300; // change r_ref to 300
+
+int &&x_ref = x; // compiler error (trying to assign r-value ref to l-value)
+
+```
+
+Consider functions:
+
+```cpp
+
+int x{100};
+
+void func1(int &num);
+
+func1(x); // Okay -- x is an l-value
+func1(200); // Error -- 200 is an r-value
+
+void func2(int &&num);
+
+func2(200); // Okay -- 200 is an r-value
+func2(x); // Error - x is an l-value
+
+// NOTE: We can define both
+void func(int &num);
+void fund(int &&num);
+
+```
+
+Let's look at the move constructor:
+
+```cpp
+
+class Move {
+
+private:
+    int *data;
+
+public:
+    void set_data(int d) { *data = d; }
+    int get_data() { return *data; }
+    Move(int d);  // Constructor
+    Move(const Move &source;) // Copy Constructor
+    Move(Move &&source) // Move Constructor
+    ~Move(); // Detructor
+}
+
+// Copy constructor
+Move::Move(const Move &source) {
+    data = new int;
+    *data = *source.data;
+}
+
+// Move constructor
+// Think of it like, stealing the data and then nulling out the original
+Move::Move(Move &&source) : data{source.data} {
+    source.data = nullptr;  // Null out the original pointer
+}
+
+```
+
+Now if we run the following, the copy constructor will be called to copy the temp `10` and `20`.
+
+```cpp
+
+Vector<Move> vec;
+
+// Move constructors will be called for the temp values.
+vec.push_back(Move{10});
+vec.push_back(Move{20});
+
+```
+
+### Const with Classes
+
+Creating a `const` object means none of its attributes can be changed.
+
+```cpp
+
+const Player villain {"Villain", 100, 5};
+
+villain.set_name("New name"); // Compiler error
+
+villain.get_name(); // PROBLEM: This will also throw an error since this function could change it!
+
+```
+
+The solution is that we need to tell the compiler specific methods will not modify the object. We do this by adding `const` before the semi-colon in the method prototype.
+
+```cpp
+
+class Player {
+
+public:
+    string get_name() const; // This is okay
+
+}
+
+
+```
+
+### Static Class Members
+
+* A single member that belongs to the class rather than a single instance of that class.
+
+##### Player.h
+
+```cpp
+
+class Player {
+
+private:
+    static int num_players;
+
+public:
+    static int get_num_players();
+
+}
+
+```
+
+##### Player.cpp
+
+```cpp
+
+#include "Player.h"
+
+int Player::num_players = 0;
+
+int Player::get_num_players() {
+    return num_players;
+}
+
+```
+
+##### main.cpp
+
+```cpp
+
+cout << Player::get_num_players() << endl;
+
+```
+
+### Structs vs Classes
+
+* `struct` comes from C and is another way to make an object
+* Essentially the same as a class, except members are `public` by default
+
+```cpp
+
+struct Person {
+    string name;
+}
+
+Person p;
+p.name = "Frank";
+
+```
+
+* struct
+    * Use for passive objects with public access
+    * Don't declare methods
+* class
+    * Active objects with private access
+    * Implement getters/setters as needed
+    * Implement member methods as needed
+
+### Friends of a Class
+
+* Friend
+    * Function or class that has access to private class member
+    * AND that function is NOT a member of the class it is accessing
+* Function
+    * Can be regular non-member function
+    * Can be member methods of another class
+* Class
+    * Another class can have access to private class members
+
+```cpp
+
+class Player {
+
+    // Display player has access to everything in the Player class
+    friend void display_player(Player &p);
+    friend class Other_class;
+
+};
+
+void display_player(Player &p) {
+    // Can access private members
+}
+
+```
+
+Might use `friend` when getters / setters become long and complicated, but generally be wary of using it.``
+
+## Operator Overloading
+
+* Lets you use traditional operators like `+, *` etc. with user-defined types
+
+### Overloading Copy Assignment (=)
+
+* Don't confuse initialization with assignment
+* Initialization happens when the object is being created for the first time (it hasn't been created yet)
+* Assignment happens once the object has been initialized.
+* If you don't provide an assignment operator, it will do memberwise assignment (shallow copy).
+
+```cpp
+
+Mystring s1{"Frank"};
+Mystring s2 = s1; // NOT assignment
+s2 = s1; // assignment
+
+```
+
+To overload an operator, we use `Type &Type::operator=(const Type &rhs);`
+
+```cpp
+
+// Prototype
+Mystring &operator=(const Mystring &rhs);
+
+// Implementation
+Mystring &Mystring::operator=(const Mystring &rhs) {
+    if (this == &rhs)  // Check for self-assignment
+        return *this;
+
+    delete [] str;  // Free storage that the old pointer was pointing to
+    str = new char[std::strlen(rhs.str + 1)];
+    std::strcpy(str, rhs.str);
+
+    return *this;
+}
+
+```
+
+### Overloading Operators as Member Functions
+
+We don't return a reference but a value type, because we are returning a new type.
+
+Overloading unary operators:
+
+```cpp
+// General signature
+Returntype Type::operatorOp();
+
+Number Number::operator-() const;
+Number Number::operator++();    // pre-increment
+Number Number::opeartor++(int); // post-increment
+bool Number::operator!() const;
+
+```
+
+Example showing overloading the `-` unary operator to make a string lowercase:
+
+```cpp
+
+Mystring Mystring::operator-() const {  // const because we don't want to modify current object, but create a new object based on it.
+    char *buff = new char[std::strlen(str)+1]; // allocate space to store copy
+    std::strcopy(buff, str); // copy string over
+    for (size_t i=0; i<std::strlen(buff); i++) {  // make each char lowercase
+        buff[i] = std::tolower(buff[i]);
+    }
+
+    Mystring temp{buff}; // Construct new object using temp string as initializer
+    delete buff; // Delete temp string
+    return temp; // Return new object
+}
+
+```
+
+Overloading binary operators (operators that take two parameters):
+
+```cpp
+
+ReturnType Type::operatorOp(const Type &rhs);
+
+Number Number::operator+(const Number &rhs) const;
+Number Number::operator-(const Number &rhs) const;
+bool Number::operator==(const Number &rhs) const;
+bool Number::operator<(const Number &rhs) const;
+
+Number n1{100}, n2{200};
+Number n3 = n1 + n2; // n1.opeartor+(n2);
+
+```
+
+Overloading `==`
+
+```cpp
+
+bool Mystring::operator==(const Mystring &rhs) const {
+    if (std::strcmp(str, rhs.str) == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+if (s1 == s2)...
+
+```
+
+Overload `+`:
+
+```cpp
+
+Mystring Mystring::operator+(const Mystring &rhs) const {
+
+    size_t buff_size = std::strlen(str) + std::strlen(rhs.str) + 1;
+    char *buff = new char[buff_size];
+    std::strcpy(buff, str);
+    std::strcat(buff rhs.str);
+    Mystring temp {buff}
+    delete [] buff;
+    return temp;
+}
+
+```
+
+### Operator Overloading with Global Functions
+
+Instead of overriding functions as class member functions, we can also override them as global functions. When doing this, we often mark them as __friend__ so we can access private attributes.
+
+```cpp
+
+# Assume this is friend of Mystring class to access private attributes.
+friend bool operator==(const Mystring &lhs, const Mystring &rhs);
+ 
+bool operator==(const Mystring &lhs, const Mystring &rhs) {
+
+    if (std::strcmp(lhs.str, rhs.str) == 0)
+        return true;
+    else
+        return false;
+}
+
+```
+
+### Overloading Stream Insertion / Extraction Operators
+This allows us to read in and print out our classes.
+These are not implemented as member methods because:
+* Left operand is user-defined class
+* Not the usual way we use these opeartors
+
+```cpp
+
+// Returns ostream by reference so we can keep inserting.
+std::ostream &operator<<(std::ostream &os, const Mystring &obj) {
+    os << obj.get_str(); // Or can use .str if friend function.
+    return os;
+}
+
+std::istream &operator>>(std::istream &is, Mystring &obj) {
+    char *buff = new char[1000];
+    is >> buff;
+    obj = Mystring{buff}; // If you have copy or move assignment
+    delete [] buff;
+    return is;
+}
+
+```
+
+## Inheritance
+
+### Inheritance vs. Composition
+
+* Inheritance: "is-a" relationship 
+* Composition: "has-a" relationship 
+
+### Type Inheritance
+
+* `public`
+    * Most common
+    * Establishes `is-a` relationship between derived and base class
+* `private` / `protected`
+    * Establishes `derived class has-a base class` relationship
+    * `is implemented in terms of` relationship
+    * Different from composition
+    * Note: `private` members __are__ inherited, they are just not accessible.
+
+```cpp
+class Account {
+    // Account class members
+}
+
+class Savings_Account: public Account {
+    // Savings_Account class members
+    // Savings_Account `is-a` Account
+}
+
+
+```
+* `protected` allow access to base and derived classes, but not from instances of those objects.
+
+```cpp
+
+class Base {
+    public: 
+        int a{0};
+        void display() {std::cout << a << b << c << endl;}
+    protected:
+        int b{0};
+    private:
+        int c{0}
+};
+
+class Derived : public Base {
+    // c is inherited, but not accessible
+    public:
+        void access_base_members() {
+            a = 100; // OK
+            b = 200; // OK
+            c = 300; // Compiler Error (not accessible)
+        }
+};
+
+Base base;
+base.a = 100; // OK
+base.b = 200; // Compiler Error (protected accessible in derived class, but not from instances of the objects)
+base.c = 300; // Compiler Error
+
+
+Derived d;
+
+d.a = 100; // OK
+d.b = 200; // Compiler Error
+d.c = 300; // Compiler Error
+
+```
+
+### Invoking Base Constructor
+
+Call the base constructor in the initializer list.
+
+```cpp
+class Base {
+    int value;
+public:
+    Base() : value{0} { 
+        cout << "Base no args" << endl;
+    };
+    
+    Base(int x) : value{x} { 
+        cout << "int Base constructor" << endl; 
+    }
+};
+
+class Derived : public Base {
+    int doubled_value;
+
+public:
+    Derived(): Base{}, doubled_value{0} { 
+        cout << "Derived no args" << endl; 
+    }
+    
+    Derived(int x) : Base{x}, doubled_value{x*2} { 
+        cout << "int Derived constructor" << endl; 
+    }
+};
+```
+
+### Copy / Move Constructors
+
+* copy and move constructors are not explicitly inherited from the base class
+* Can invoke base copy constructor explicitly
+
+### Multiple Inheritance
+
+C++ supports multiple inheritance.
+
+```cpp
+class Department_Chair: public Faculty, public Administrator {...};
+```
+
+### constexpr
+
+`constexpr` are like constants that are only available within the class scope.
+These can be used like constants that are only available within your class.
+Example usage would be for default parameters.
+
+```cpp
+class Account {
+
+private:
+    static constexpr double def_balance = 0.0;
+public:
+    Account(double balance = def_balance);  
+};
+```
+
